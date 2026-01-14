@@ -3,6 +3,7 @@ package internal
 import (
 	"compress/gzip"
 	"crypto/subtle"
+	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -126,5 +127,7 @@ func MainServer() {
 	} else {
 		log.Println("warning: proceeding without any authentication")
 	}
-	http.ListenAndServe(":8080", handler)
+	addr := fmt.Sprintf(":%d", ListenPort)
+	log.Printf("listening on %s", addr)
+	http.ListenAndServe(addr, handler)
 }

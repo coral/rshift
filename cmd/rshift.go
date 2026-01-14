@@ -55,6 +55,7 @@ func main() {
 	flag.StringVar(&internal.SourceTimezone, "source-timezone", "", "IANA timezone of source stream (e.g., Europe/Stockholm)")
 	flag.BoolVar(&internal.MinimalBuffer, "minimal-buffer", false, "only keep enough buffer for timezone delta + 2 min")
 	flag.BoolVar(&internal.RawMode, "raw", false, "raw audio stream mode (for direct AAC/MP3 streams)")
+	flag.IntVar(&internal.ListenPort, "port", 8080, "HTTP server listen port")
 	flag.Parse()
 
 	if internal.SourceTimezone != "" {

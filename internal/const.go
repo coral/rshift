@@ -7,3 +7,4 @@ var TimezoneOffsetSeconds int
 var MinimalBuffer bool
 var MaxAgeSeconds = 5 * 24 * 3600
 var RawMode bool
+var ListenPort = 8080

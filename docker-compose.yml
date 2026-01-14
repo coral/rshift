@@ -12,6 +12,7 @@ services:
       - "-source-timezone=${SOURCE_TIMEZONE:-Europe/Stockholm}"
       - "-minimal-buffer"
       - "-raw"
+      - "-port=${PORT:-8090}"
     ports:
-      - "${PORT:-8080}:8080"
+      - "${PORT:-8090}:${PORT:-8090}"
     restart: unless-stopped
