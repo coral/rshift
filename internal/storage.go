@@ -37,8 +37,6 @@ func (d *FileStorage) SavePlaylist(h *Hls) error {
 	}
 	defer out.Close()
 
-	log.Printf("saved %s\n", fileName)
-
 	_, err = h.Mp.Encode().WriteTo(out)
 	if err != nil {
 		return fmt.Errorf("WriteTo: %w", err)
@@ -55,8 +53,6 @@ func (d *FileStorage) SaveSegment(h *Hls, segmentUrl string, segment []byte) err
 		return nil
 	}
 	_ = BackendFs.MkdirAll(filepath.Dir(fileName), os.ModeDir|os.ModePerm)
-
-	log.Printf("saved %s\n", fileName)
 
 	out, err := BackendFs.Create(fileName)
 	if err != nil {

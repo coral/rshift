@@ -78,7 +78,6 @@ func saveRawChunk(timestamp int64, data []byte) error {
 	if err := os.WriteFile(filename, data, 0644); err != nil {
 		return err
 	}
-	log.Printf("saved chunk %s (%d bytes)", filename, len(data))
 	return nil
 }
 
@@ -102,7 +101,6 @@ func cleanOldRawChunks() {
 		if ts < cutoff {
 			path := filepath.Join(dir, e.Name())
 			os.Remove(path)
-			log.Printf("deleted old chunk %s", path)
 		}
 	}
 }
@@ -143,17 +141,19 @@ func RawStreamHandler(w http.ResponseWriter, r *http.Request) {
 	sort.Slice(timestamps, func(i, j int) bool { return timestamps[i] < timestamps[j] })
 
 	oldestChunk := timestamps[0]
-	if oldestChunk > targetTime {
-		needed := oldestChunk - targetTime
-		http.Error(w, fmt.Sprintf("Buffer not ready - need %d more seconds of data", needed), http.StatusServiceUnavailable)
-		return
-	}
-
 	startIdx := 0
-	for i, ts := range timestamps {
-		if ts >= targetTime {
-			startIdx = i
-			break
+
+	if oldestChunk > targetTime {
+		// Buffer still growing - start from beginning and stream forward
+		log.Printf("buffer still growing (have %d seconds, need %d), streaming from start",
+			time.Now().Unix()-oldestChunk, int64(TimezoneOffsetSeconds))
+	} else {
+		// Full buffer available - find the right starting point
+		for i, ts := range timestamps {
+			if ts >= targetTime {
+				startIdx = i
+				break
+			}
 		}
 	}
 
@@ -163,7 +163,8 @@ func RawStreamHandler(w http.ResponseWriter, r *http.Request) {
 
 	flusher, _ := w.(http.Flusher)
 
-	log.Printf("streaming from timestamp %d (offset %d seconds)", timestamps[startIdx], TimezoneOffsetSeconds)
+	actualOffset := time.Now().Unix() - timestamps[startIdx]
+	log.Printf("streaming from timestamp %d (actual offset %d seconds, target %d)", timestamps[startIdx], actualOffset, TimezoneOffsetSeconds)
 
 	idx := startIdx
 	for {
