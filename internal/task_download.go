@@ -2,9 +2,16 @@ package internal
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
 
 	"github.com/spf13/afero"
 )
+
+func EnsureDirectories() {
+	os.MkdirAll(filepath.Join(OutPath, "m3u8"), 0755)
+	os.MkdirAll(filepath.Join(OutPath, "ts"), 0755)
+}
 
 func downloadPlaylistIfRecent(playlistUrl string, lastSequence int) (int, error) {
 	BackendFs = afero.NewOsFs()
@@ -29,6 +36,7 @@ func downloadPlaylistIfRecent(playlistUrl string, lastSequence int) (int, error)
 }
 
 func LoopPlayList(url string) error {
+	EnsureDirectories()
 	lastSequence := 0
 	for {
 		var err error

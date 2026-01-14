@@ -21,9 +21,16 @@ func calculateTimezoneOffset(sourceTZ string) (int, error) {
 
 func workerDownload(wg *sync.WaitGroup) {
 	defer wg.Done()
-	for {
-		err := internal.LoopPlayList(internal.M3u8DownloadUrl)
-		log.Printf("download error: %v, restarting...\n", err)
+	if internal.RawMode {
+		for {
+			err := internal.LoopRawStream(internal.M3u8DownloadUrl)
+			log.Printf("raw stream error: %v, restarting...\n", err)
+		}
+	} else {
+		for {
+			err := internal.LoopPlayList(internal.M3u8DownloadUrl)
+			log.Printf("download error: %v, restarting...\n", err)
+		}
 	}
 }
 
@@ -47,6 +54,7 @@ func main() {
 	flag.StringVar(&internal.OutPath, "output-path", "/mnt/disks/sdb/out", "path to store cached files")
 	flag.StringVar(&internal.SourceTimezone, "source-timezone", "", "IANA timezone of source stream (e.g., Europe/Stockholm)")
 	flag.BoolVar(&internal.MinimalBuffer, "minimal-buffer", false, "only keep enough buffer for timezone delta + 2 min")
+	flag.BoolVar(&internal.RawMode, "raw", false, "raw audio stream mode (for direct AAC/MP3 streams)")
 	flag.Parse()
 
 	if internal.SourceTimezone != "" {
@@ -62,6 +70,8 @@ func main() {
 			log.Printf("minimal buffer mode: keeping %d seconds of data", internal.MaxAgeSeconds)
 		}
 	}
+
+	internal.EnsureDirectories()
 
 	var wg sync.WaitGroup
 	wg.Add(3)

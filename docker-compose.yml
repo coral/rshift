@@ -2,16 +2,16 @@ services:
   rshift:
     build: .
     container_name: rshift
-    environment:
-      - TZ=${TZ:-Europe/Stockholm}
     volumes:
       - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
       - ${DATA_PATH:-./data}:/data
     command:
-      - "-download-m3u8-url=${M3U8_URL:-https://live1.sr.se/knattekanalen-aac-320}"
+      - "-download-m3u8-url=${STREAM_URL:-https://live1.sr.se/knattekanalen-aac-320}"
       - "-output-path=/data"
       - "-source-timezone=${SOURCE_TIMEZONE:-Europe/Stockholm}"
       - "-minimal-buffer"
+      - "-raw"
     ports:
       - "${PORT:-8080}:8080"
     restart: unless-stopped

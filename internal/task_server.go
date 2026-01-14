@@ -27,6 +27,7 @@ func (w gzipResponseWriter) Write(b []byte) (int, error) {
 
 func TimeshiftHandler(w http.ResponseWriter, r *http.Request) {
 	timeShift := r.PathValue("timeShift")
+	timeShift = strings.TrimSuffix(timeShift, ".m3u8")
 
 	ts, err := strconv.Atoi(timeShift)
 	if err != nil {
@@ -110,10 +111,14 @@ func MainServer() {
 	urlDirectory := path.Dir(u.Path)
 
 	mux := http.NewServeMux()
-	mux.HandleFunc("GET /timeshift/{timeShift}.m3u8", TimeshiftHandler)
-	mux.HandleFunc("GET /default.m3u8", DefaultTimeshiftHandler)
-	mux.Handle("GET /timeshift/", http.StripPrefix("/timeshift/",
-		http.FileServer(http.Dir(path.Join(OutPath, path.Join("ts/", urlDirectory))))))
+	if RawMode {
+		mux.HandleFunc("GET /stream", RawStreamHandler)
+	} else {
+		mux.HandleFunc("GET /shift/{timeShift...}", TimeshiftHandler)
+		mux.HandleFunc("GET /default.m3u8", DefaultTimeshiftHandler)
+		mux.Handle("GET /segments/", http.StripPrefix("/segments/",
+			http.FileServer(http.Dir(path.Join(OutPath, path.Join("ts/", urlDirectory))))))
+	}
 
 	handler := gzipHandler(corsHandler(mux))
 	if os.Getenv("RSHIFT_USERNAME") != "" {
