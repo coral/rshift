@@ -45,6 +45,23 @@ func TimeshiftHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write(fileBytes)
 }
 
+func DefaultTimeshiftHandler(w http.ResponseWriter, r *http.Request) {
+	if TimezoneOffsetSeconds == 0 {
+		http.Error(w, "source-timezone not configured", http.StatusServiceUnavailable)
+		return
+	}
+
+	targetTime := int(time.Now().Unix()) - TimezoneOffsetSeconds
+	fileBytes, err := storage.ReadPlaylistNear(targetTime)
+	if err != nil || len(fileBytes) == 0 {
+		http.Error(w, "Buffer not ready", http.StatusServiceUnavailable)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/x-mpegURL")
+	w.Write(fileBytes)
+}
+
 func gzipHandler(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if !strings.Contains(r.Header.Get("Accept-Encoding"), "gzip") {
@@ -94,6 +111,7 @@ func MainServer() {
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /timeshift/{timeShift}.m3u8", TimeshiftHandler)
+	mux.HandleFunc("GET /default.m3u8", DefaultTimeshiftHandler)
 	mux.Handle("GET /timeshift/", http.StripPrefix("/timeshift/",
 		http.FileServer(http.Dir(path.Join(OutPath, path.Join("ts/", urlDirectory))))))
 

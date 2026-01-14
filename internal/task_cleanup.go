@@ -28,7 +28,7 @@ func wipeDir(dir string) {
 			return err
 		}
 
-		if info.ModTime().AddDate(0, 0, MaxAgeFilesDays).Before(time.Now()) {
+		if info.ModTime().Add(time.Duration(MaxAgeSeconds) * time.Second).Before(time.Now()) {
 			log.Printf("deleting file %s (too old)\n", path)
 			if err := os.Remove(path); err != nil {
 				log.Printf("error: Remove %s %v\n", path, err)
