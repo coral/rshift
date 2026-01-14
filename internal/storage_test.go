@@ -2,11 +2,12 @@ package internal
 
 import (
 	"bytes"
+	"path/filepath"
+
 	"github.com/grafov/m3u8"
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/spf13/afero"
-	"path/filepath"
 )
 
 func getMp(playlistBytes []byte) *m3u8.MediaPlaylist {

@@ -37,14 +37,10 @@ func main() {
 	flag.Parse()
 
 	var wg sync.WaitGroup
-	wg.Add(1)
+	wg.Add(3)
 	go workerDownload(&wg)
-	wg.Add(1)
 	go workerServer(&wg)
-
 	go workerCleanup(&wg)
-	wg.Add(1)
-
 	wg.Wait()
 	log.Println("Main: Completed")
 }

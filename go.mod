@@ -1,15 +1,28 @@
 module rshift
 
-go 1.14
+go 1.24.0
+
+toolchain go1.24.5
 
 require (
-	github.com/goji/httpauth v0.0.0-20160601135302-2da839ab0f4d
-	github.com/gorilla/handlers v1.5.1
-	github.com/gorilla/mux v1.8.0
-	github.com/grafov/m3u8 v0.11.1
+	github.com/grafov/m3u8 v0.12.1
 	github.com/jarcoal/httpmock v1.1.0
-	github.com/onsi/ginkgo v1.16.5
-	github.com/onsi/gomega v1.10.1
-	github.com/pkg/errors v0.9.1
-	github.com/spf13/afero v1.7.1
+	github.com/onsi/ginkgo/v2 v2.27.5
+	github.com/onsi/gomega v1.38.2
+	github.com/spf13/afero v1.15.0
+)
+
+require (
+	github.com/Masterminds/semver/v3 v3.4.0 // indirect
+	github.com/go-logr/logr v1.4.3 // indirect
+	github.com/go-task/slim-sprig/v3 v3.0.0 // indirect
+	github.com/google/go-cmp v0.7.0 // indirect
+	github.com/google/pprof v0.0.0-20250403155104-27863c87afa6 // indirect
+	go.yaml.in/yaml/v3 v3.0.4 // indirect
+	golang.org/x/mod v0.31.0 // indirect
+	golang.org/x/net v0.48.0 // indirect
+	golang.org/x/sync v0.19.0 // indirect
+	golang.org/x/sys v0.39.0 // indirect
+	golang.org/x/text v0.33.0 // indirect
+	golang.org/x/tools v0.40.0 // indirect
 )

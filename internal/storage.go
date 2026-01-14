@@ -1,8 +1,7 @@
 package internal
 
 import (
-	"github.com/pkg/errors"
-	"github.com/spf13/afero"
+	"fmt"
 	"log"
 	"net/url"
 	"os"
@@ -11,6 +10,8 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+
+	"github.com/spf13/afero"
 )
 
 type Storage interface {
@@ -24,16 +25,15 @@ type FileStorage struct {}
 var BackendFs afero.Fs
 
 func (d *FileStorage) SavePlaylist(h *Hls) error {
-	fileName, err := getPlaylistFilename(h.playlistUrl,
-		h.downloadTime)
+	fileName, err := getPlaylistFilename(h.playlistUrl, h.downloadTime)
 	if err != nil {
-		return errors.Wrapf(err, "getPlaylistFilename")
+		return fmt.Errorf("getPlaylistFilename: %w", err)
 	}
 
 	_ = BackendFs.MkdirAll(filepath.Dir(fileName), os.ModeDir|os.ModePerm)
 	out, err := BackendFs.Create(fileName)
 	if err != nil {
-		return errors.Wrapf(err, "Create")
+		return fmt.Errorf("Create: %w", err)
 	}
 	defer out.Close()
 
@@ -41,15 +41,17 @@ func (d *FileStorage) SavePlaylist(h *Hls) error {
 
 	_, err = h.Mp.Encode().WriteTo(out)
 	if err != nil {
-		return errors.Wrapf(err, "WriteTo")
+		return fmt.Errorf("WriteTo: %w", err)
 	}
 	return nil
 }
 
-func (d *FileStorage) SaveSegment(h *Hls, url string, segment []byte) error {
-	fileName, err := getSegmentFilename(url)
+func (d *FileStorage) SaveSegment(h *Hls, segmentUrl string, segment []byte) error {
+	fileName, err := getSegmentFilename(segmentUrl)
+	if err != nil {
+		return fmt.Errorf("getSegmentFilename: %w", err)
+	}
 	if _, err := BackendFs.Stat(fileName); err == nil {
-		//log.Printf("file %s already exists, exiting\n", fileName)
 		return nil
 	}
 	_ = BackendFs.MkdirAll(filepath.Dir(fileName), os.ModeDir|os.ModePerm)
@@ -58,27 +60,26 @@ func (d *FileStorage) SaveSegment(h *Hls, url string, segment []byte) error {
 
 	out, err := BackendFs.Create(fileName)
 	if err != nil {
-		return errors.Wrapf(err, "Create")
+		return fmt.Errorf("Create: %w", err)
 	}
 	defer out.Close()
 
 	_, err = out.Write(segment)
 	if err != nil {
-		return errors.Wrapf(err, "Write")
+		return fmt.Errorf("Write: %w", err)
 	}
 	return nil
 }
 
 func (d *FileStorage) ReadPlaylistNear(desiredTimestamp int) ([]byte, error) {
 	fileName, err := GetClosestPlaylistFilename(desiredTimestamp)
-
 	if err != nil {
-		return nil, errors.Wrapf(err, "GetClosestPlaylistFilename")
+		return nil, fmt.Errorf("GetClosestPlaylistFilename: %w", err)
 	}
 
 	fileBytes, err := afero.ReadFile(BackendFs, fileName)
 	if err != nil {
-		return nil, errors.Wrapf(err, "ReadFile")
+		return nil, fmt.Errorf("ReadFile: %w", err)
 	}
 
 	return fileBytes, nil
@@ -89,20 +90,21 @@ const SEPARATOR = "---"
 func getPlaylistFilename(playListUrl string, unixTime int64) (string, error) {
 	u, err := url.Parse(playListUrl)
 	if err != nil {
-		return "", errors.Wrapf(err, "Parse")
+		return "", fmt.Errorf("Parse: %w", err)
 	}
 	fileName := filepath.Join(OutPath, "m3u8", path.Base(u.Path)+SEPARATOR+strconv.FormatInt(unixTime, 10))
 	return fileName, nil
 }
 
 func GetClosestPlaylistFilename(approxTime int) (string, error) {
-	fs, err := BackendFs.Open(filepath.Join(OutPath, "m3u8"))
+	dir, err := BackendFs.Open(filepath.Join(OutPath, "m3u8"))
 	if err != nil {
-		return "", errors.Wrapf(err, "Open")
+		return "", fmt.Errorf("Open: %w", err)
 	}
-	fileNames, err := fs.Readdirnames(0)
+	defer dir.Close()
+	fileNames, err := dir.Readdirnames(0)
 	if err != nil {
-		return "", errors.Wrapf(err, "Readdir")
+		return "", fmt.Errorf("Readdir: %w", err)
 	}
 	sort.Strings(fileNames)
 
@@ -131,7 +133,7 @@ func GetClosestPlaylistFilename(approxTime int) (string, error) {
 func getSegmentFilename(segmentUrl string) (string, error) {
 	u, err := url.Parse(segmentUrl)
 	if err != nil {
-		return "", errors.Wrapf(err, "Parse")
+		return "", fmt.Errorf("Parse: %w", err)
 	}
 	fileName := filepath.Join(OutPath, "ts", u.Path)
 	return fileName, nil

@@ -2,24 +2,24 @@ package internal
 
 import (
 	"fmt"
-	"github.com/pkg/errors"
+
 	"github.com/spf13/afero"
 )
 
-func downloadPlaylistIfRecent(url string, lastSequence int) (int, error) {
+func downloadPlaylistIfRecent(playlistUrl string, lastSequence int) (int, error) {
 	BackendFs = afero.NewOsFs()
 	fs := &FileStorage{}
 
 	var h Hls
-	err := h.fetchPlaylist(url)
+	err := h.fetchPlaylist(playlistUrl)
 	if err != nil {
-		return 0, errors.Wrapf(err, "fetchPlaylist")
+		return 0, fmt.Errorf("fetchPlaylist: %w", err)
 	}
 
 	if int(h.Mp.SeqNo) != lastSequence {
 		err = h.fetchAndSaveAll(fs)
 		if err != nil {
-			return 0, errors.Wrapf(err, "fetchAndSaveAll")
+			return 0, fmt.Errorf("fetchAndSaveAll: %w", err)
 		}
 		h.blockTillExpires()
 		return int(h.Mp.SeqNo), nil

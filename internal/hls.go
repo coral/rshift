@@ -2,11 +2,11 @@ package internal
 
 import (
 	"bytes"
+	"fmt"
 	"net/url"
 	"time"
 
 	"github.com/grafov/m3u8"
-	"github.com/pkg/errors"
 )
 
 type Hls struct {
@@ -20,16 +20,16 @@ func (h *Hls) fetchPlaylist(playlistUrl string) error {
 	var err error
 	h.Mp, err = m3u8.NewMediaPlaylist(100000, 100000)
 	if err != nil {
-		return errors.Wrapf(err, "NewMediaPlaylist")
+		return fmt.Errorf("NewMediaPlaylist: %w", err)
 	}
 
 	body, err := download(playlistUrl)
 	if err != nil {
-		return errors.Wrapf(err, "download")
+		return fmt.Errorf("download: %w", err)
 	}
 
 	if err = h.Mp.Decode(*bytes.NewBuffer(body), false); err != nil {
-		return errors.Wrapf(err, "DecodeFrom")
+		return fmt.Errorf("DecodeFrom: %w", err)
 	}
 	h.downloadTime = time.Now().Unix()
 	h.playlistUrl = playlistUrl
@@ -54,13 +54,13 @@ func (h *Hls) parseSegments() error {
 	for i := startAt; playlistHasMoreItems(i); i++ {
 		segmentUrl, err := url.Parse(h.Mp.Segments[i].URI)
 		if err != nil {
-			return errors.Wrapf(err, "Parse segment URL")
+			return fmt.Errorf("Parse segment URL: %w", err)
 		}
 
 		if !segmentUrl.IsAbs() {
 			base, err := url.Parse(h.playlistUrl)
 			if err != nil {
-				return errors.Wrapf(err, "Parse base URL")
+				return fmt.Errorf("Parse base URL: %w", err)
 			}
 			segmentUrl = base.ResolveReference(segmentUrl)
 		}
@@ -77,10 +77,10 @@ func (h *Hls) fetchAndSaveSegments(storage Storage) error {
 	for _, v := range h.segmentUrls {
 		b, err := download(v)
 		if err != nil {
-			return errors.Wrapf(err, "Download")
+			return fmt.Errorf("Download: %w", err)
 		}
 
-		err = storage.SaveSegment(h, v, b)
+		_ = storage.SaveSegment(h, v, b)
 	}
 	return nil
 }
@@ -96,17 +96,17 @@ func (h *Hls) blockTillExpires() {
 func (h *Hls) fetchAndSaveAll(storage Storage) error {
 	err := h.savePlaylist(storage)
 	if err != nil {
-		return errors.Wrapf(err, "savePlaylist")
+		return fmt.Errorf("savePlaylist: %w", err)
 	}
 
 	err = h.parseSegments()
 	if err != nil {
-		return errors.Wrapf(err, "parseSegments")
+		return fmt.Errorf("parseSegments: %w", err)
 	}
 
 	err = h.fetchAndSaveSegments(storage)
 	if err != nil {
-		return errors.Wrapf(err, "fetchAndSaveSegments")
+		return fmt.Errorf("fetchAndSaveSegments: %w", err)
 	}
 	return nil
 }

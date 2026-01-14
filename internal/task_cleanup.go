@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"io/fs"
 	"log"
 	"os"
 	"path/filepath"
@@ -8,33 +9,33 @@ import (
 )
 
 func DeleteOldFiles() {
-	dir := filepath.Join(OutPath, "m3u8")
-	wipeDir(dir)
-
-	dir2 := filepath.Join(OutPath, "ts")
-	wipeDir(dir2)
+	wipeDir(filepath.Join(OutPath, "m3u8"))
+	wipeDir(filepath.Join(OutPath, "ts"))
 }
 
 func wipeDir(dir string) {
-	err := filepath.Walk(dir,
-		func(path string, fileInfo os.FileInfo, err error) error {
-			if err != nil {
-				return err
-			}
+	err := filepath.WalkDir(dir, func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
 
-			if fileInfo.IsDir() {
-				return nil
-			}
-			// not here: check for nasty stuff like symlinks
-			if fileInfo.ModTime().AddDate(0, 0, MaxAgeFilesDays).Before(time.Now()) {
-				log.Printf("deleting file %s (too old)\n", path)
-				err = os.Remove(path)
-				if err != nil {
-					log.Printf("error: Remove %s %v\n", path, err)
-				}
-			}
+		if d.IsDir() {
 			return nil
-		})
+		}
+
+		info, err := d.Info()
+		if err != nil {
+			return err
+		}
+
+		if info.ModTime().AddDate(0, 0, MaxAgeFilesDays).Before(time.Now()) {
+			log.Printf("deleting file %s (too old)\n", path)
+			if err := os.Remove(path); err != nil {
+				log.Printf("error: Remove %s %v\n", path, err)
+			}
+		}
+		return nil
+	})
 	if err != nil {
 		log.Println(err)
 	}
