@@ -114,6 +114,8 @@ func MainServer() {
 	mux := http.NewServeMux()
 	if RawMode {
 		mux.HandleFunc("GET /stream", RawStreamHandler)
+		mux.HandleFunc("GET /raw/playlist.m3u8", RawHLSPlaylistHandler)
+		mux.HandleFunc("GET /raw/segments/{filename}", RawHLSSegmentHandler)
 	} else {
 		mux.HandleFunc("GET /shift/{timeShift...}", TimeshiftHandler)
 		mux.HandleFunc("GET /default.m3u8", DefaultTimeshiftHandler)
